@@ -745,3 +745,92 @@ if name == "Espectear" then
     getgenv().SpectatePanel = gui
 end
 
+local personalStatsPanel = Instance.new("Frame")
+personalStatsPanel.Size = UDim2.new(0, 195, 0, 100)
+personalStatsPanel.Position = UDim2.new(0, 10, 0, 40 + (#(contentByTab["Stats"]) * 28))
+personalStatsPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+personalStatsPanel.BackgroundTransparency = 0.2
+personalStatsPanel.Visible = false
+personalStatsPanel.Parent = ContentPanel
+
+local tiempoLabel = Instance.new("TextLabel")
+tiempoLabel.Size = UDim2.new(1, -10, 0, 20)
+tiempoLabel.Position = UDim2.new(0, 5, 0, 5)
+tiempoLabel.BackgroundTransparency = 1
+tiempoLabel.TextColor3 = Color3.new(1, 1, 1)
+tiempoLabel.Font = Enum.Font.SourceSansBold
+tiempoLabel.TextSize = 16
+tiempoLabel.TextXAlignment = Enum.TextXAlignment.Left
+tiempoLabel.Parent = personalStatsPanel
+
+local fuerzaLabel = tiempoLabel:Clone()
+fuerzaLabel.Position = UDim2.new(0, 5, 0, 28)
+fuerzaLabel.Parent = personalStatsPanel
+
+local durabilidadLabel = tiempoLabel:Clone()
+durabilidadLabel.Position = UDim2.new(0, 5, 0, 51)
+durabilidadLabel.Parent = personalStatsPanel
+
+local renacimientosLabel = tiempoLabel:Clone()
+renacimientosLabel.Position = UDim2.new(0, 5, 0, 74)
+renacimientosLabel.Parent = personalStatsPanel
+
+local player = game:GetService("Players").LocalPlayer
+local RunService = game:GetService("RunService")
+
+local function getStat(name)
+	local stats = player:FindFirstChild("leaderstats") or player:FindFirstChild("PlayerStats")
+	local stat = stats and stats:FindFirstChild(name)
+	return stat or player:FindFirstChild(name)
+end
+
+local strengthStat, durabilityStat, rebirthStat = getStat("Strength"), getStat("Durability"), getStat("Rebirths")
+while not (strengthStat and durabilityStat and rebirthStat) do
+	RunService.RenderStepped:Wait()
+	strengthStat, durabilityStat, rebirthStat = getStat("Strength"), getStat("Durability"), getStat("Rebirths")
+end
+
+local startTime = tick()
+local startStrength = strengthStat.Value
+local startDurability = durabilityStat.Value
+local startRebirths = rebirthStat.Value
+
+RunService.RenderStepped:Connect(function()
+	if not personalStatsPanel.Visible then return end
+
+	local now = tick()
+	local elapsed = now - startTime
+	local h = math.floor(elapsed / 3600)
+	local m = math.floor((elapsed % 3600) / 60)
+	local s = math.floor(elapsed % 60)
+
+	local fuerza = strengthStat.Value - startStrength
+	local dura = durabilityStat.Value - startDurability
+	local rebirths = rebirthStat.Value - startRebirths
+
+	tiempoLabel.Text = string.format("Tiempo: %02d:%02d:%02d", h, m, s)
+	fuerzaLabel.Text = "Fuerza ganada: " .. abreviarNumero(fuerza)
+	durabilidadLabel.Text = "Durabilidad ganada: " .. abreviarNumero(dura)
+	renacimientosLabel.Text = "Renacimientos ganados: " .. tostring(rebirths)
+end)
+
+local originalSwitchTab = switchTab
+switchTab = function(tabName)
+	originalSwitchTab(tabName)
+	personalStatsPanel.Visible = (tabName == "Stats")
+end
+
+switchTab(lastTab)
+
+local fullHeight = 400
+local minimizedHeight = 25
+local isMinimized = false
+
+MinButton.MouseButton1Click:Connect(function()
+    isMinimized = not isMinimized
+    MinButton.Text = isMinimized and "+" or "-"
+    MainFrame.Size = UDim2.new(0, 700, 0, isMinimized and minimizedHeight or fullHeight)
+    TabPanel.Visible = not isMinimized
+    ContentPanel.Visible = not isMinimized
+    statsPanel.Visible = not isMinimized and (currentTab == "Stats" or buttonStates["Stats_Check Stats"])
+end)
